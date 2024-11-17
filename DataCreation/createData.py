@@ -6,9 +6,9 @@ import sys
 
 def main():
 
-    keyType,n,d,l,m = Config.ConfigParser(sys.argv)
+    keyType, n, d, l, m = Config.ConfigParser(sys.argv)
 
-    kv_data_gen = KVDataGenerator(keyType,n,d,l,m)
+    kv_data_gen = KVDataGenerator(keyType, n, d, l, m)
 
     data = kv_data_gen.createData()
     
