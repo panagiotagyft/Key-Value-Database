@@ -3,4 +3,3 @@ age int
 height float
 street string
 level int
-k 2

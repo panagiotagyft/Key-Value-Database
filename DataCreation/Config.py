@@ -1,3 +1,4 @@
+
 import sys
 
 def is_integer(argument: str) -> int:
@@ -54,19 +55,7 @@ def ConfigParser(arguments):
 
     keyType = dict()
     for line in File:
-        print(line)
         auxiliaryList = line.split()
         keyType[auxiliaryList[0]] = auxiliaryList[1]
-    # keyType[auxiliaryList[0]] = 1
-    with open("output.txt", "w") as file:
-        
-        sys.stdout = file
-        print(keyType)
        
-
-    # Reset stdout to its default value
-    sys.stdout = sys.__stdout__
-    
-    print(keyType)
-    return keyType,n,d,l,m
-
+    return keyType, n, d, l, m
