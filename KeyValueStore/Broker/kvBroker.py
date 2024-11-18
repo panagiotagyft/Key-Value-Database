@@ -1,5 +1,5 @@
-from KVBrokerManager import KVBrokerManager
-import Config
+from KeyValueStore.Broker.KVBrokerManager import KVBrokerManager
+import KeyValueStore.Broker.Config as Config
 import sys
 
 
