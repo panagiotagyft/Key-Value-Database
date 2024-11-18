@@ -14,7 +14,7 @@ def main():
     
     data = '\n'.join(f'"{x}": {json.dumps(y).replace(",", ";")}' for x, y in data.items())
     
-    with open("../KeyValueStore/dataToIndex.txt", "w") as file:
+    with open("../Broker/KeyValueStore/dataToIndex.txt", "w") as file:
         sys.stdout = file
         print(data)
        
