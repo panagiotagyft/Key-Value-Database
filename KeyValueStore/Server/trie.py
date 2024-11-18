@@ -1,4 +1,4 @@
-from trie import Node
+from KeyValueStore.Server.trie import Node
 
 class Item:
     def __init__(self, parent=''):
@@ -30,7 +30,7 @@ class Node:
         self.items.append(item)
         return item.getChildren()
     
-    def charExists(self, entry: str) -> Item:
+    def substringExists(self, entry: str) -> Item:
         for index in range(len(self.items)):
             if (item:=self.getItem(index)).getParent(entry) == True: return item
         return -1
@@ -46,19 +46,10 @@ class Trie:
        
         current_node = self.root
 
-        for char in entry:
+        for substring in entry:
             
-            if not (items:=current_node.getItems()) or  (item:=current_node.charExists(char)) == False:
-                current_node = current_node.addItem(char)
+            if not (items:=current_node.getItems()) or  (item:=current_node.substringExists(substring)) == False:
+                current_node = current_node.addItem(substring)
                 continue
             
             current_node = current_node.getChildren(item)
-
-
-           
-
-            
-
-
-
-
