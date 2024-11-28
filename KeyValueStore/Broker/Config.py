@@ -35,18 +35,22 @@ def ConfigParser(arguments):
 
     File = open(serverFile, "r")
 
-    servers = dict()
+    servers = list()
     for line in File:
-        auxiliaryList = line.split()      
-        servers[auxiliaryList[0]] = int(auxiliaryList[1])
+        print(line)
+        auxiliaryList = line.split()  
+        
+        servers.append((auxiliaryList[0], int(auxiliaryList[1])))
        
-    k = is_integer(arguments[6])       
-    if k < 1 or k>len(servers):
+    k = is_integer(arguments[6])     
+    print(k)  
+    print(len(servers))
+    if k < 1 or k > len(servers):
         print('''Error! The value of the 6th argument must be greater than or equal to 1 or 
                 less than or equal to the number of servers''')
         sys.exit(1)
    
     File = open(dataFile, "r")
-    data = [line for line in File]
-
+    data = [line.strip() for line in File]
+    print(data)
     return servers, data, k

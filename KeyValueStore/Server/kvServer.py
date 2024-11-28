@@ -1,5 +1,5 @@
-from KeyValueStore.Server.KVServerManager import KVServerManager
-import KeyValueStore.Server.Config as Config
+from KVServerManager import KVServerManager
+import Config
 import sys
 
 
