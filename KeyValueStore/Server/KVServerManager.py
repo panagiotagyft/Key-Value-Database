@@ -36,16 +36,16 @@ class KVServerManager:
                     print(f'Error! Failed to communicate with {self.ip_address}:{self.port}.')
                     
 
-    def processClientRequest(self, request: str) -> str:
+    def processClientRequest(self, request: str):
 
         request_type = request.split(" ")[0]
         space_index = request.find(" ")
         data = request[space_index+1:]
-        return self.processRequestByType(request_type, data)
+        self.processRequestByType(request_type, data)
 
 
-    def processRequestByType(self, request_type: str, data: str) -> bool:
-        return self.PUT(data)
+    def processRequestByType(self, request_type: str, data: str):
+        self.PUT(data)
         # request_type_handlers = {
         #     "PUT": lambda: return self.PUT(data)
         #     # "GET": lambda:
@@ -53,12 +53,12 @@ class KVServerManager:
         #     # "QUERY": lambda:
         # }
         
-        return request_type_handlers.get(request_type, lambda: None)()
+        # return request_type_handlers.get(request_type, lambda: None)()
     
-    def PUT(self, data: str) -> bool:
+    def PUT(self, data: str):
         topLevelKey_payload = data.split(": ", 1)
         b = self.trie.insert(topLevelKey_payload)
         self.trie.display()
-        return b
+        
 
         
