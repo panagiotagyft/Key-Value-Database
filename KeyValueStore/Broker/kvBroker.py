@@ -11,6 +11,8 @@ def main():
 
     kvBrokerManager.sendDataToServers()
 
+    kvBrokerManager.getDataFromServers()
+
 
 if __name__ == "__main__":
     main()

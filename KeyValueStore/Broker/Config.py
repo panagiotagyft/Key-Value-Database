@@ -37,14 +37,10 @@ def ConfigParser(arguments):
 
     servers = list()
     for line in File:
-        print(line)
         auxiliaryList = line.split()  
-        
         servers.append((auxiliaryList[0], int(auxiliaryList[1])))
        
     k = is_integer(arguments[6])     
-    print(k)  
-    print(len(servers))
     if k < 1 or k > len(servers):
         print('''Error! The value of the 6th argument must be greater than or equal to 1 or 
                 less than or equal to the number of servers''')
