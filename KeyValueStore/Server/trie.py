@@ -63,8 +63,8 @@ class Trie:
         print(entry)
         top_level_key = entry[0]
         key_parts = list(top_level_key)  # ['k', 'e', 'y', '0']
-        key_parts.pop(0)
-        key_parts.pop(len(key_parts)-1)
+        # key_parts.pop(0)
+        # key_parts.pop(len(key_parts)-1)
         print(key_parts)
         for char in key_parts:
            
@@ -110,26 +110,52 @@ class Trie:
         # print(self.traverse(current_node))
         return (True, self.traverse(current_node))
 
-    def traverse(self, node=None):
-        if node is None:
-            node = self.root
-        flag = False
-        result = "{"
-        items = node.getItems()
-        for i, item in enumerate(items):
-            key = item.getValue()
+    def traverse(self, current_node=None):
+        
+        if current_node is None: current_node = self.root
+        print("-----------------------")
+        flag = False; result = "{"
+        
+        for i, item in enumerate(items:=current_node.getItems()):
+            print(item.getValue())
+
             if item.getIsLeaf():  # Αν είναι φύλλο, εμφανίζει την τιμή του
-                result = f'"{key}"'
+                result = f'"{item.getValue()}"'
                 flag = True
-                print(result)
+                
             else:  # Διαφορετικά, συνεχίζει αναδρομικά
-                children = self.traverse(item.getChildren())
-                result += f'"{key}": {children}'
+                
+                result += f'"{item.getValue()}": {self.traverse(item.getChildren())}'
 
             if i < len(items) - 1:  # Προσθήκη ';' αν δεν είναι το τελευταίο στοιχείο
                 result += "; "
+        
         if flag is False: result += "}"
+        
         return result
+
+    def get(self, subkey):
+
+        current_node = self.root
+
+        subkey = subkey.split(".")
+        top_level_key = subkey[0]; subkeys = subkey[1:]
+
+        for char in top_level_key:
+
+            if (existing_item := current_node.elementExists(char)) == -1:
+                return (False, "Not Found!")
+            
+            current_node = existing_item.getChildren()
+        
+        for subkey in subkeys: 
+
+            if (existing_item := current_node.elementExists(subkey)) == -1:
+                return (False, "Not Found!")
+            
+            current_node = existing_item.getChildren()
+        
+        return (True, self.traverse(current_node))        
 
 
     def display(self, node=None, level=0, prefix=""):
@@ -146,17 +172,19 @@ class Trie:
             self.display(item.getChildren(), level + 1, prefix="|-- ")
 
 
-# # Δημιουργία του Trie
-# trie = Trie()
+# Δημιουργία του Trie
+trie = Trie()
 
-# # Εισαγωγή δεδομένων
-# trie.insert(["key0", '{"name": "John", "age": 22}'])
-# trie.insert(["key1", '{"street": {"height": 73.65, "street": {"height": 64.41, "name": "oAZC", "age": {"street": "xjWY"}, "level": 31}, "name": {"name": {"height": 5.91, "age": 25}, "age": {"height": 86.01, "street": "sMdr", "name": "IelD", "age": 46, "level": 80}, "level": {"street": "FqwV", "age": 18, "level": 51}}, "level": 51}, "name": {"height": 25.09, "name": {"height": 83.96, "street": "zIvS", "name": "jlag", "age": 76, "level": 65}, "age": 40}, "age": 86}'])
-# trie.display()
-# # Λήψη string για το "key1"
-# result = trie.getKey("key1")
-# print(result)
+# Εισαγωγή δεδομένων
+trie.insert(["key0", '{"name": "John", "age": 22}'])
+trie.insert(["key1", '{"street": {"height": 73.65, "street": {"height": 64.41, "name": "oAZC", "age": {"street": "xjWY"}, "level": 31}, "name": {"name": {"height": 5.91, "age": 25}, "age": {"height": 86.01, "street": "sMdr", "name": "IelD", "age": 46, "level": 80}, "level": {"street": "FqwV", "age": 18, "level": 51}}, "level": 51}, "name": {"height": 25.09, "name": {"height": 83.96, "street": "zIvS", "name": "jlag", "age": 76, "level": 65}, "age": 40}, "age": 86}'])
+trie.display()
+# Λήψη string για το "key1"
+result = trie.getKey("key1")
+print(result)
 
+result = trie.get("key1.street.name.name")
+print(f"key1.street.age: {result}")
         
 
         
