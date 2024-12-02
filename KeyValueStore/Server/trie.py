@@ -21,10 +21,20 @@ class Node:
             if item.getValue() == entry:  # Σύγκριση απευθείας με το `getValue`
                 return item
         return -1
-
     
     def getChildren(self, item):
         return item.getChildren()
+    
+    def removeItem(self, element):
+        for index in range(len(self.items)):
+            item = self.getItem(index)
+            if item.getValue() == element:
+                del self.items[index]    
+                
+    def removeItems(self):
+        while self.items:
+            del self.items[0]
+
 
 class Item:
     def __init__(self, value='', is_leaf=False):
@@ -43,7 +53,8 @@ class Item:
 
     def valueExists(self, entry: str) -> bool:
         if entry == self.value: return True
-        return False    
+        return False 
+  
     
 
 class Trie:
@@ -171,6 +182,28 @@ class Trie:
             # Επανάληψη για τα παιδιά του κόμβου
             self.display(item.getChildren(), level + 1, prefix="|-- ")
 
+    def delete(self, top_level_key):
+        
+        current_node = self.root
+        for char in top_level_key:
+
+            if (existing_item := current_node.elementExists(char)) == -1:
+                return (False, "Not Found!")
+            previous_node = current_node
+            current_node = existing_item.getChildren() 
+        
+        self.recursive_delete(current_node)
+
+        previous_node.removeItem(existing_item.getValue())
+
+
+    def recursive_delete(self, current_node):
+              
+        for item in current_node.getItems():
+            self.recursive_delete(item.getChildren())
+
+        current_node.removeItems()
+        del current_node
 
 # Δημιουργία του Trie
 trie = Trie()
@@ -184,7 +217,14 @@ result = trie.getKey("key1")
 print(result)
 
 result = trie.get("key1.street.name.name")
-print(f"key1.street.age: {result}")
+print(f"key1.street.age: {result}\n==========\n")
+
+trie.display()
+print("--------------")
+trie.delete("key1")
+print("--------------")
+trie.display()
+
         
 
         
