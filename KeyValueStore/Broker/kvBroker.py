@@ -10,7 +10,7 @@ def main():
 
     # 2. initialize the KVBrokerManager with the parsed configuration
     kvBrokerManager = KVBrokerManager(servers, data, k)
-
+    kvBrokerManager.connectionToAllServers()
     # 3. send the data to the servers
     kvBrokerManager.sendDataToServers()
 

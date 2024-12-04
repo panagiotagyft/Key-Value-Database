@@ -15,21 +15,31 @@ class KVBrokerManager:
         """
         Initiates the connection with all the servers and stores the connection between them.
         """
+
         for ip, port in self.servers:
             try:
                 # socket(): sets up a communication channel	
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sck:
-                    
-                    sck.connect((ip, port))
-                    print(f"Socket connected successfully to {ip}:{port}!")
-                    self.connections.append((sck, ip, port))
+                sck = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sck.connect((ip, port))
+                print(f"Socket connected successfully to {ip}:{port}!")
+                self.connections.append((sck, ip, port))
             
-            except socket.error as e:
-                print(f"Error! Socket operation failed. Check network connection or server status: {e}")
-
             except Exception as e:
-                print(f"Error! An unexpected error occurred: {e}")
+                print(f"Error! Socket operation failed. Check network connection or server status: {e}")
     
+
+    def closeConnections(self):
+        """
+        Closes all active connections.
+        """
+        for sck, ip, port in self.connections:
+            try:
+                sck.close()
+                print(f"Closed connection to {ip}:{port}")
+            except Exception as e:
+                print(f"Error closing connection to {ip}:{port}: {e}")
+        self.connections = []
+
 
     def sendDataToServers(self) -> bool:
         """ 
@@ -37,31 +47,29 @@ class KVBrokerManager:
         """
         
         try:
-            # 1. randomly select -k- unique servers for replication
-            selected_servers = set()
-            while len(selected_servers) < self.k:
-                selected_servers.add(random.choice(list(self.connections)))
-                
-            # 2. send data to selected server
-            for connection, ip, port in selected_servers:
-                for record in self.data:
-                    try:
-                        connection.sendall(('PUT ' + record).encode('utf-8'))
-                        print("Data sent.")
-                                
-                        data = connection.recv(1024)
-                        print(f"Received from {ip}:{port}:", data.decode('utf-8'))
-        
-                    except socket.error as e:
-                        print(f"Error! Socket operation failed with {ip}:{port}. Closing connection: {e}")
-                        connection.close()  # close the faulty connection
-                        self.connections.remove((connection, ip, port))  # remove it from active connections
-                        break  # exit this loop for the current server
-                    except Exception as e:
-                        print(f"Unexpected error with {ip}:{port}. Closing connection: {e}")
-                        connection.close()
-                        self.connections.remove((connection, ip, port))  
-                        break 
+            for record in self.data:
+
+                # 1. randomly select -k- unique servers for replication
+                selected_servers = set()
+                while len(selected_servers) < self.k:
+                    selected_servers.add(random.choice(list(self.connections)))
+                    
+                # 2. send data to selected server
+                for connection, ip, port in selected_servers:
+                    
+                        try:
+                            connection.sendall(('PUT ' + record).encode('utf-8'))
+                            print("Data sent.")
+                                    
+                            data = connection.recv(1024)
+                            print(f"Received from {ip}:{port}:", data.decode('utf-8'))
+            
+                        except Exception as e:
+                            print(f"Unexpected error with {ip}:{port}. Closing connection: {e}")
+                            connection.close()
+                            self.connections.remove((connection, ip, port))  
+                            break 
+                        
 
         except KeyboardInterrupt:
             self.handlExit() 
@@ -69,19 +77,7 @@ class KVBrokerManager:
         return True
         
 
-    def handlExit(self):
-        """
-        Shuts down all the servers.
-        """
-        for connection, ip, port in self.connections:
-            try:
-                connection.close()
-                print(f"Connection to {ip}:{port} closed.")
-            except Exception as e:
-                 print(f"Error closing connection to {ip}:{port}: {e}")
-
-
-    def checkActiveServers(self, type="CHECK") -> bool:
+    def checkActiveServers(self, type) -> bool:
         """
         Checks the availability of active servers and ensures sufficient resources
         are available to process the given request type.
@@ -172,34 +168,34 @@ class KVBrokerManager:
                     print("Supported commands: EXIT, GET <key>, DELETE <key>, QUERY <keypath>")
                     continue
 
-                if self.checkActiveServers() == False:
-                    self.handlExit()
+                if self.checkActiveServers("CHECK") == False:
+                    self.closeConnections()
                     break
                 
                 # check active servers before processing commands
+                status = True
                 if command_parts[0] == "GET":      status = self.checkActiveServers("GET")
                 elif command_parts[0] == "DELETE": status = self.checkActiveServers("DELETE")
                 elif command_parts[0] == "QUERY":  status = self.checkActiveServers("QUERY")
 
                 if status == False:
-                    self.handlExit()
+                    self.closeConnections()
                     break
 
                 if command == "EXIT": 
-                    self.handlExit()
+                    self.closeConnections()
                     break
 
                 for connection, ip, port in self.connections:
         
                     try:
             
-                        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sck:
-
-                            connection.sendall((command).encode('utf-8'))
-                            print("Data sent.")
-                                    
-                            data = connection.recv(1024)
-                            print(f"Received from {ip}:{port}:", data.decode('utf-8'))
+                        
+                        connection.sendall((command).encode('utf-8'))
+                        print("Data sent.")
+                                  
+                        data = connection.recv(1024)
+                        print(f"Received from {ip}:{port}:", data.decode('utf-8'))
             
                             
                     except socket.error as e:
