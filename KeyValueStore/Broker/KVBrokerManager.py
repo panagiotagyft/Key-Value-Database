@@ -99,9 +99,15 @@ class KVBrokerManager:
         """
         for connection, ip, port in self.connections:
             try:
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sck:
-                    sck.connect((ip, port))
-            except socket.error as e:
+                connection.sendall("Hello".encode('utf-8'))
+                # Ρυθμίζουμε ένα μικρό timeout για την απάντηση
+                connection.settimeout(2)
+                response = connection.recv(1024)
+
+                if response.decode('utf-8') != "World":
+                    raise Exception("Invalid response")
+                
+            except Exception as e:
                 self.connections.remove((connection, ip, port))  # Remove it from active connections
         
         active_servers = len(self.connections)
@@ -185,29 +191,33 @@ class KVBrokerManager:
                 if command == "EXIT": 
                     self.closeConnections()
                     break
-
+                
+                flag = True
                 for connection, ip, port in self.connections:
         
-                    try:
-            
-                        
+                    try:     
                         connection.sendall((command).encode('utf-8'))
-                        print("Data sent.")
                                   
                         data = connection.recv(1024)
-                        print(f"Received from {ip}:{port}:", data.decode('utf-8'))
+                        mess = data.decode('utf-8')
+
+                        if mess == "OK":
+                            flag = False
+                            continue
+                        
+                        if mess != "Not Found!":
+                            flag = False
+                            print(f"{command_parts[1]}:", mess)
+                            break
             
-                            
-                    except socket.error as e:
-                        print(f"Error! Socket operation failed with {ip}:{port}. Closing connection: {e}")
-                        connection.close()  
-                        self.connections.remove((connection, ip, port))  
-                        break
                     except Exception as e:
                         print(f"Unexpected error with {ip}:{port}. Closing connection: {e}")
                         connection.close()
                         self.connections.remove((connection, ip, port))  
                         break  
+                
+                # print Not Found!
+                if flag == True:  print(f"{command_parts[1]}:", mess)
 
         except KeyboardInterrupt:
-            self.handlExit()
+            self.closeConnections()

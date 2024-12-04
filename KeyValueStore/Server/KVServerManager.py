@@ -19,7 +19,7 @@ class KVServerManager:
         try:
             # create a socket using IPv4 addressing and TCP protocol
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sck:
-                    
+                sck.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  
                 # bind the socket to the specified IP address and port
                 sck.bind((self.ip_address, self.port))
                     
@@ -27,15 +27,15 @@ class KVServerManager:
                 sck.listen()
                 print(f"Server is listening on {self.ip_address}:{self.port}")
                 print(f"Server is up and running. Waiting for incoming connections...")
-                        
+                connection, address = sck.accept()
                 while True:
-                    connection, address = sck.accept()
-                    threading.Thread(target=self.handle_client, args=(connection, address)).start()
+    
                     try:
                         print(f"Connected by {address}")
                         data = connection.recv(4098)
+
                         if not data:
-                            break
+                            continue
                                 
                         request = data.decode('utf-8')
                                 
@@ -48,35 +48,14 @@ class KVServerManager:
                         print(f"Error! Failed to communicate with {address}: {e}")
                     except Exception as e:
                         print(f"Error! handling request from {address}: {e}")
-                    finally:
-                        connection.close()
+
                                     
         except KeyboardInterrupt:
             print("Shutting down server...")
         except Exception as e:
             print(f"Unexpected error: {e}")
         finally:
-            print("Server terminated.")
-
-
-    def handle_client(self, connection, address):
-        try:
-            while True:
-                data = connection.recv(1024)
-                if not data:
-                    # Ο πελάτης έκλεισε τη σύνδεση
-                    print(f"Client {address} has closed the connection.")
-                    break
-                request = data.decode('utf-8')
-                print(f"Received request from {address}: {request}")
-                response = self.processBrokerRequest(request)
-                connection.sendall(response.encode('utf-8'))
-        except socket.error as e:
-            print(f"Error! Failed to communicate with {address}: {e}")
-        except Exception as e:
-            print(f"Error handling request from {address}: {e}")
-        finally:
-            connection.close()                  
+            print("Server terminated.")     
 
     def processBrokerRequest(self, request: str) -> str:
         
@@ -95,7 +74,8 @@ class KVServerManager:
             "PUT": lambda: self.PUT(data),
             "GET": lambda: self.GET(data),
             "DELETE": lambda: self.DELETE(data),
-            "QUERY": lambda: self.QUERY(data)
+            "QUERY": lambda: self.QUERY(data),
+            "Hello": lambda: "World"
         }
         
         return request_type_handlers.get(request_type, lambda: None)()
@@ -105,7 +85,7 @@ class KVServerManager:
         status = self.trie.insert(topLevelKey_payload)
         if status == True: return "OK"
         
-        return "Error!!!"
+        return "Error!"
     
     def GET(self, data: str) -> str:
         mess = self.trie.getKey(data)
