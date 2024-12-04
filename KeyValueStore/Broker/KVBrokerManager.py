@@ -3,82 +3,215 @@ import random
 
 class KVBrokerManager:
 
-    def __init__(self, servers: list, data: list, k: int, selected_servers=set()):
+    def __init__(self, servers: list, data: list, k: int):
 
         self.servers = servers
         self.data = data
         self.k = k
-        self.selected_servers = selected_servers
 
-  
+        self.connections = list()
+
+    def connectionToAllServers(self):
+        """
+        Initiates the connection with all the servers and stores the connection between them.
+        """
+        for ip, port in self.servers:
+            try:
+                # socket(): sets up a communication channel	
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sck:
+                    
+                    sck.connect((ip, port))
+                    print(f"Socket connected successfully to {ip}:{port}!")
+                    self.connections.append((sck, ip, port))
+            
+            except socket.error as e:
+                print(f"Error! Socket operation failed. Check network connection or server status: {e}")
+
+            except Exception as e:
+                print(f"Error! An unexpected error occurred: {e}")
+    
+
     def sendDataToServers(self) -> bool:
+        """ 
+        Selects -k- unique servers and inserts the replicated data into them. 
+        """
         
-         
-        while len(self.selected_servers) < self.k:
-            self.selected_servers.add(random.choice(list(self.servers)))
-        print(self.selected_servers)
-
-
-        for ip, port in self.selected_servers:
-             for record in self.data:
-                try:
-                    # socket(): sets up a communication channel	
-                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sck:
+        try:
+            # 1. randomly select -k- unique servers for replication
+            selected_servers = set()
+            while len(selected_servers) < self.k:
+                selected_servers.add(random.choice(list(self.connections)))
                 
-                        sck.connect((ip, port))
-                        print(f"Socket connected successfully to {ip}:{port}!")
-
-                        sck.sendall(('PUT ' + record).encode('utf-8'))
+            # 2. send data to selected server
+            for connection, ip, port in selected_servers:
+                for record in self.data:
+                    try:
+                        connection.sendall(('PUT ' + record).encode('utf-8'))
                         print("Data sent.")
-                        
-                        data = sck.recv(1024)
+                                
+                        data = connection.recv(1024)
                         print(f"Received from {ip}:{port}:", data.decode('utf-8'))
- 
-                
-                except socket.error as e:
-                    print(f"Error! Socket operation failed. Check network connection or server status: {e}")
+        
+                    except socket.error as e:
+                        print(f"Error! Socket operation failed with {ip}:{port}. Closing connection: {e}")
+                        connection.close()  # close the faulty connection
+                        self.connections.remove((connection, ip, port))  # remove it from active connections
+                        break  # exit this loop for the current server
+                    except Exception as e:
+                        print(f"Unexpected error with {ip}:{port}. Closing connection: {e}")
+                        connection.close()
+                        self.connections.remove((connection, ip, port))  
+                        break 
 
-                except Exception as e:
-                    print(f"Error! An unexpected error occurred: {e}")
+        except KeyboardInterrupt:
+            self.handlExit() 
+
+        return True
+        
+
+    def handlExit(self):
+        """
+        Shuts down all the servers.
+        """
+        for connection, ip, port in self.connections:
+            try:
+                connection.close()
+                print(f"Connection to {ip}:{port} closed.")
+            except Exception as e:
+                 print(f"Error closing connection to {ip}:{port}: {e}")
+
+
+    def checkActiveServers(self, type="CHECK") -> bool:
+        """
+        Checks the availability of active servers and ensures sufficient resources
+        are available to process the given request type.
+
+        Parameters:
+        -----------
+        type : str
+            The type of request to check for. Supported types are:
+            - "GET": Ensures at least `k` servers are operational.
+            - "DELETE": Requires all servers to be operational.
+            - "QUERY": Ensures at least `k` servers are operational.
+            - "CHECK": Requires all servers to be operational.
+
+        Returns:
+        --------
+        bool
+            - True if the required number of servers are active for the request type.
+            - False if the required conditions are not met, accompanied by an appropriate warning.        
+        """
+        for connection, ip, port in self.connections:
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sck:
+                    sck.connect((ip, port))
+            except socket.error as e:
+                self.connections.remove((connection, ip, port))  # Remove it from active connections
+        
+        active_servers = len(self.connections)
+
+       
+        def handle_get_query():
+            if active_servers < self.k:
+                print(f"Warning: {self.k} or more servers are down, so we cannot guarantee accurate results.")
+                return False
+
+        def handle_delete():
+            if active_servers != 3:
+                print("Warning: The deletion cannot be performed because the servers are unable to support this process as not all of them are operational.")
+                return False
+
+        def handle_check():
+            if active_servers == 0:
+                print("Warning: All servers are down; we will be forced to terminate the program.")
+                return False
+
+        request_type_handlers = {
+            "GET": handle_get_query,
+            "DELETE": handle_delete,
+            "QUERY": handle_get_query,
+            "CHECK": handle_check
+        }
+
+        # Get and execute the handler for the given type
+        return request_type_handlers.get(type, lambda: True)()
 
 
     def getDataFromServers(self):
+        """
+        Requests data from the servers based on user commands.
 
-        print("Indexing completed!! Enter one of the following commands:")
-        print("GET <key> - Retrieve the value for a specific key")
-        print("EXIT - Terminate the broker")
+        Supported commands: GET, DELETE, QUERY, EXIT
+        """
 
-        while True:
+        try:
+            print("Enter one of the following commands:")
+            print("GET <key> - Retrieve the value for a specific top-level-key")
+            print("DELETE <key> - Delete a specific top-level-key")
+            print("QUERY <keypath> - Retrieve the value for a specific subkey")
+            print("EXIT - Terminate the process")
 
-            try:
+            while True:
+
+                # read user input and strip extra spaces
                 command = input("Enter command: ").strip()
 
                 if not command: continue
+                
+                # split command into parts (action and data, if applicable)
+                command_parts = command.split(" ", 1)
 
-                if command == "Exit": break
+                # validate command format
+                if command_parts[0] not in ["EXIT", "GET", "DELETE", "QUERY"]:
+                    print("Invalid command. Please try again.")
+                    print("Supported commands: EXIT, GET, DELETE, QUERY")
+                    continue
 
-                for ip, port in self.selected_servers:
-                    for record in self.data:
-                        try:
-                            # socket(): sets up a communication channel	
-                            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sck:
-                        
-                                sck.connect((ip, port))
-                                print(f"Socket connected successfully to {ip}:{port}!")
+                if command_parts[0] != "EXIT" and len(command_parts) != 2:
+                    print("Invalid command. Please try again.")
+                    print("Supported commands: EXIT, GET <key>, DELETE <key>, QUERY <keypath>")
+                    continue
 
-                                sck.sendall((command).encode('utf-8'))
-                                print("Data sent.")
-                                
-                                data = sck.recv(1024)
-                                print(f"Received from {ip}:{port}:", data.decode('utf-8'))
+                if self.checkActiveServers() == False:
+                    self.handlExit()
+                    break
+                
+                # check active servers before processing commands
+                if command_parts[0] == "GET":      status = self.checkActiveServers("GET")
+                elif command_parts[0] == "DELETE": status = self.checkActiveServers("DELETE")
+                elif command_parts[0] == "QUERY":  status = self.checkActiveServers("QUERY")
+
+                if status == False:
+                    self.handlExit()
+                    break
+
+                if command == "EXIT": 
+                    self.handlExit()
+                    break
+
+                for connection, ip, port in self.connections:
         
-                        
-                        except socket.error as e:
-                            print(f"Error! Socket operation failed. Check network connection or server status: {e}")
+                    try:
+            
+                        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sck:
 
-                        except Exception as e:
-                            print(f"Error! An unexpected error occurred: {e}")
+                            connection.sendall((command).encode('utf-8'))
+                            print("Data sent.")
+                                    
+                            data = connection.recv(1024)
+                            print(f"Received from {ip}:{port}:", data.decode('utf-8'))
+            
+                            
+                    except socket.error as e:
+                        print(f"Error! Socket operation failed with {ip}:{port}. Closing connection: {e}")
+                        connection.close()  
+                        self.connections.remove((connection, ip, port))  
+                        break
+                    except Exception as e:
+                        print(f"Unexpected error with {ip}:{port}. Closing connection: {e}")
+                        connection.close()
+                        self.connections.remove((connection, ip, port))  
+                        break  
 
-            except KeyboardInterrupt:
-                print("\nTerminating broker...")
-                break
+        except KeyboardInterrupt:
+            self.handlExit()
