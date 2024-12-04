@@ -1,16 +1,15 @@
 import socket
 from Trie.Trie import Trie
-# import thread module
-from _thread import *
-import threading
+import sys
 
 class KVServerManager:
 
-    def __init__(self, ip_address: str, port: int):
+    def __init__(self, ip_address: str, port: int, sck=None):
 
         self.ip_address = ip_address
         self.port = port
         self.trie = Trie()
+        self.socket = sck
 
     def receiveDataFromBroker(self):
         """
@@ -23,11 +22,13 @@ class KVServerManager:
                 # bind the socket to the specified IP address and port
                 sck.bind((self.ip_address, self.port))
                     
-                    # start listening for incoming connections
+                # start listening for incoming connections
                 sck.listen()
                 print(f"Server is listening on {self.ip_address}:{self.port}")
                 print(f"Server is up and running. Waiting for incoming connections...")
                 connection, address = sck.accept()
+
+                self.socket = sck 
                 while True:
     
                     try:
@@ -45,18 +46,23 @@ class KVServerManager:
                         connection.sendall(response.encode('utf-8'))
                         
                     except socket.error as e:
-                        print(f"Error! Failed to communicate with {address}: {e}")
+                        print(f"Error! Failed to communicate with  {address}: {e}")
+                        if connection: connection.close()
+                        
                     except Exception as e:
-                        print(f"Error! handling request from {address}: {e}")
-
+                        print(f"Unexpected error: {e}")
+                        if connection: connection.close()
                                     
         except KeyboardInterrupt:
-            print("Shutting down server...")
+            print("\nShutting down server...")
         except Exception as e:
             print(f"Unexpected error: {e}")
         finally:
-            print("Server terminated.")     
-
+            if sck:
+                print("Closing server socket.")
+                sck.close()
+            print("Server terminated.")
+     
     def processBrokerRequest(self, request: str) -> str:
         
         # extract the request type 
@@ -75,7 +81,8 @@ class KVServerManager:
             "GET": lambda: self.GET(data),
             "DELETE": lambda: self.DELETE(data),
             "QUERY": lambda: self.QUERY(data),
-            "Hello": lambda: "World"
+            "Hello": lambda: "World",
+            "Exit": lambda: self.Exit()
         }
         
         return request_type_handlers.get(request_type, lambda: None)()
@@ -98,5 +105,10 @@ class KVServerManager:
     def QUERY(self, data: str) -> str:
         mess = self.trie.getValueByKey(data)
         return mess
-
+    
+    def Exit(self):
+        print("Exiting...")
+        if self.socket:
+            self.socket.close()
+        sys.exit(0)
         

@@ -1,5 +1,6 @@
 import socket
 import random
+import sys
 
 class KVBrokerManager:
 
@@ -34,6 +35,7 @@ class KVBrokerManager:
         """
         for sck, ip, port in self.connections:
             try:
+                sck.sendall("Exit".encode('utf-8'))
                 sck.close()
                 print(f"Closed connection to {ip}:{port}")
             except Exception as e:
@@ -72,7 +74,8 @@ class KVBrokerManager:
                         
 
         except KeyboardInterrupt:
-            self.handlExit() 
+            self.closeConnectionst()
+            sys.exit(0) 
 
         return True
         
@@ -221,3 +224,4 @@ class KVBrokerManager:
 
         except KeyboardInterrupt:
             self.closeConnections()
+            sys.exit(0)
