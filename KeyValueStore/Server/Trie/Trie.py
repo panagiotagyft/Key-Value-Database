@@ -168,27 +168,6 @@ class Trie:
         # return the string representation of the node's children
         return self.nodeTraversalToString(current_node)
 
-    def display(self, node=None, level=0, prefix=""):
-        """
-        Displays the Trie structure in a readable format.
-
-        Parameters:
-        ----------
-        node : Node, optional
-            The current node to display.
-        level : int, optional
-            The current depth level for indentation.
-        prefix : str, optional
-            A prefix for formatting the display.
-        """
-        if node is None:
-            node = self.root
-
-        # Display all items in the node
-        for item in node.getItems():
-            indent = ' ' * (level * 2)  # Create indentation
-            print(f"{indent}{prefix}{item.getValue()}")
-            self.display(item.getChildren(), level + 1, prefix="|-- ")
 
     def delete(self, top_level_key):
         """

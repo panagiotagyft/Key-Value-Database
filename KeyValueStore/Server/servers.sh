@@ -28,7 +28,7 @@ free() {
 # Set the trap to catch SIGINT (Ctrl+C)
 trap free SIGINT
 
-# # Keep the script running to manage servers
-# # Wait for all background processes
+
+# Wait for all background processes
 wait
-# exit 0 
+exit 0 

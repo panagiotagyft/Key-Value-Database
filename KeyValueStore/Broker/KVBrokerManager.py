@@ -24,7 +24,9 @@ class KVBrokerManager:
                 sck.connect((ip, port))
                 print(f"Socket connected successfully to {ip}:{port}!")
                 self.connections.append((sck, ip, port))
-            
+
+            except socket.error as e:
+                print(f"Error! Failed to connect with  {ip}:{port}: {e}")
             except Exception as e:
                 print(f"Error! Socket operation failed. Check network connection or server status: {e}")
     
@@ -85,33 +87,28 @@ class KVBrokerManager:
         Checks the availability of active servers and ensures sufficient resources
         are available to process the given request type.
 
-        Parameters:
-        -----------
-        type : str
-            The type of request to check for. Supported types are:
+
+        - The type of request to check for. Supported types are:
             - "GET": Ensures at least `k` servers are operational.
             - "DELETE": Requires all servers to be operational.
             - "QUERY": Ensures at least `k` servers are operational.
             - "CHECK": Requires all servers to be operational.
 
-        Returns:
-        --------
-        bool
-            - True if the required number of servers are active for the request type.
-            - False if the required conditions are not met, accompanied by an appropriate warning.        
+        - Returns:
+            - True if the required number of servers are active for the request type 
+              Otherwise
+            - False
         """
         for connection, ip, port in self.connections:
             try:
                 connection.sendall("Hello".encode('utf-8'))
-                # Ρυθμίζουμε ένα μικρό timeout για την απάντηση
-                connection.settimeout(2)
                 response = connection.recv(1024)
 
                 if response.decode('utf-8') != "World":
-                    raise Exception("Invalid response")
+                    raise Exception()
                 
             except Exception as e:
-                self.connections.remove((connection, ip, port))  # Remove it from active connections
+                self.connections.remove((connection, ip, port))  # remove it from active connections
         
         active_servers = len(self.connections)
 
@@ -138,7 +135,6 @@ class KVBrokerManager:
             "CHECK": handle_check
         }
 
-        # Get and execute the handler for the given type
         return request_type_handlers.get(type, lambda: True)()
 
 
@@ -204,12 +200,16 @@ class KVBrokerManager:
                         data = connection.recv(1024)
                         mess = data.decode('utf-8')
 
+                        # DELETE: Delete the key from all servers.
                         if mess == "OK":
-                            flag = False
+                            flag = False 
                             continue
                         
+                        # GET, QUERY: Find the first positive response and stop the search.
                         if mess != "Not Found!":
-                            flag = False
+                            # Do not print the message "Not Found!" at the end of the search 
+                            # since the target was found.
+                            flag = False 
                             print(f"{command_parts[1]}:", mess)
                             break
             

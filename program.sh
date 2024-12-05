@@ -2,13 +2,13 @@
 
 # https://askubuntu.com/questions/974756/how-can-i-open-a-extra-console-and-run-a-program-in-it-with-one-command
 
-# cd DataCreation 
+cd DataCreation 
 
-# echo "Data Creation"
-# python3 createData.py -k keyFile.txt -n 100 -d 3 -l 4 -m 5
-# echo
+echo "Data Creation"
+python3 createData.py -k keyFile.txt -n 100 -d 3 -l 4 -m 5
+echo
 
-# cd ..
+cd ..
 cd KeyValueStore
 echo "KeyValueStore"
 
@@ -35,4 +35,4 @@ free() {
 trap free SIGINT
 
 wait
-
+exit 0 
