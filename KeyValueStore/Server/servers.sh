@@ -1,10 +1,18 @@
 #!/bin/bash
 
-IP="127.0.0.1"  # Ορισμός της μεταβλητής IP
+server_file="../Broker/serverFile.txt"
 
-# Εκκίνηση των servers σε διαφορετικές πόρτες
-python3 kvServer.py -a "$IP" -p 8001 &
-python3 kvServer.py -a "$IP" -p 8020 &
-python3 kvServer.py -a "$IP" -p 8003 &
+# Check if the file exists
+if [ ! -f "$server_file" ]; then
+  echo "The file $server_file does not exist."
+  exit 1
+fi
 
-echo "Servers are starting on ports 8006, 8001, and 8010..."
+# start KV Servers from serverFile.txt
+while IFS=" " read -r ip port; do
+  echo "Starting server at IP $ip and port $port..."
+  python3 kvServer.py -a "$ip" -p "$port" &
+done < "$server_file"
+
+echo "All servers have been started."
+
