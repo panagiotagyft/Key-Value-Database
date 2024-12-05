@@ -61,10 +61,10 @@ class KVBrokerManager:
                     
                         try:
                             connection.sendall(('PUT ' + record).encode('utf-8'))
-                            print("Data sent.")
+                            # print("Data sent.")
                                     
                             data = connection.recv(1024)
-                            print(f"Received from {ip}:{port}:", data.decode('utf-8'))
+                            # print(f"Received from {ip}:{port}:", data.decode('utf-8'))
             
                         except Exception as e:
                             print(f"Unexpected error with {ip}:{port}. Closing connection: {e}")
@@ -154,7 +154,7 @@ class KVBrokerManager:
             print("GET <key> - Retrieve the value for a specific top-level-key")
             print("DELETE <key> - Delete a specific top-level-key")
             print("QUERY <keypath> - Retrieve the value for a specific subkey")
-            print("EXIT - Terminate the process")
+            print("EXIT - Terminate the process\n")
 
             while True:
 

@@ -10,11 +10,14 @@ def main():
 
     # 2. initialize the KVBrokerManager with the parsed configuration
     kvBrokerManager = KVBrokerManager(servers, data, k)
+
+    # 3. 
     kvBrokerManager.connectionToAllServers()
-    # 3. send the data to the servers
+
+    # 4. send the data to the servers
     kvBrokerManager.sendDataToServers()
 
-    print("Indexing completed!")
+    print("\nIndexing completed!\n")
 
     # 5. execute queries to retrieve or remove data from the servers
     kvBrokerManager.getDataFromServers()

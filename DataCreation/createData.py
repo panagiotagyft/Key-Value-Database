@@ -20,7 +20,7 @@ def main():
     data = '\n'.join(f'"{x}": {json.dumps(y).replace(",", ";")}' for x, y in data.items())
     
     # write the formatted data to a file
-    with open("../Broker/KeyValueStore/dataToIndex.txt", "w") as file:
+    with open("../KeyValueStore/Broker/dataToIndex.txt", "w") as file:
         sys.stdout = file
         print(data)
        

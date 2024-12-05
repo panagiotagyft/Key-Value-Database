@@ -48,5 +48,5 @@ def ConfigParser(arguments):
    
     File = open(dataFile, "r")
     data = [line.strip() for line in File]
-    print(data)
+    
     return servers, data, k
