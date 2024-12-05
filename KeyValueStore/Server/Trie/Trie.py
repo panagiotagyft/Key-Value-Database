@@ -11,17 +11,7 @@ class Trie:
 
     def insert(self, entry: str) -> bool:
         """
-        Inserts a key-value entry into the Trie.
-
-        Parameters:
-        ----------
-        entry : str
-            The key-value pair to insert into the Trie.
-
-        Returns:
-        -------
-        bool
-            True if the insertion was successful.
+        Inserts a key-value entry into the Trie. Returns True if the insertion was successful.
         """
 
         try:
@@ -35,14 +25,25 @@ class Trie:
             key_parts.pop(0)  
             key_parts.pop(len(key_parts) - 1) 
 
+            key_parts = str(key_parts)
+            # Separate letters ('key') and number
+            letters = ''.join([char for char in key_parts if char.isalpha()])
+            number = ''.join([char for char in key_parts if char.isdigit()])
+            
             # traverse or create the path in the Trie for the key
-            for char in key_parts:
+            for char in letters:
                 if (existing_item := current_node.elementExists(char)) == -1:
                     item = current_node.addItem(char)
                     current_node = item.getChildren()
                 else:
                     item = existing_item
                     current_node = existing_item.getChildren()
+            
+            # insert number key{number}
+            if (existing_item := current_node.elementExists(number)) == -1:
+                item = current_node.addItem(number)
+                current_node = item.getChildren()
+
 
             # parse and store the payload
             payload = (payload := entry[1]).replace(";", ",")  # replace separators
@@ -60,13 +61,6 @@ class Trie:
     def recursive_insertion(self, node, payload):
         """
         Recursively inserts a payload into the Trie.
-
-        Parameters:
-        ----------
-        node : Node
-            The current node where the payload is being inserted.
-        payload : dict or value
-            The data to insert into the Trie.
         """
         
         # if the payload is a leaf value (not a dictionary), add it directly
@@ -81,26 +75,27 @@ class Trie:
 
     def getKey(self, top_level_key):
         """
-        Retrieves the value associated with a top-level key.
-
-        Parameters:
-        ----------
-        top_level_key : str
-            The key to search for in the Trie.
-
-        Returns:
-        -------
-        tuple:
-            A tuple containing a success flag and the retrieved value or error message.
+        Retrieves the value associated with a top-level key. Returns the retrieved value or error message.
         """
         current_node = self.root
+ 
+        key_parts = list(top_level_key)  
+        key_parts = str(key_parts)
+        
+        # separate letters ('key') and number
+        letters = ''.join([char for char in key_parts if char.isalpha()])
+        number = ''.join([char for char in key_parts if char.isdigit()])
 
-        # traverse the Trie to find the key
-        for char in top_level_key:
+        # traverse the Trie to find the key 
+        for char in letters:
             if (existing_item := current_node.elementExists(char)) == -1:
                 return "Not Found!"
-
             current_node = existing_item.getChildren()
+
+        # check number key{number}
+        if (existing_item := current_node.elementExists(number)) == -1:
+            return "Not Found!"
+        current_node = existing_item.getChildren()
 
         # return the string representation of the node's children
         return self.nodeTraversalToString(current_node)
@@ -108,21 +103,10 @@ class Trie:
     def nodeTraversalToString(self, current_node=None):
         """
         Converts the subtree of a node to a string representation.
-
-        Parameters:
-        ----------
-        current_node : Node, optional
-            The starting node for traversal.
-
-        Returns:
-        -------
-        str
-            A string representation of the node and its children.
         """
         if current_node is None:
             current_node = self.root
 
-        print("-----------------------")
         flag = False
         result = "{"
 
@@ -131,10 +115,10 @@ class Trie:
             
             # if it's a leaf, add its value
             if item.getIsLeaf():  
-                result = f'"{item.getValue()}"'
+                result = f'{item.getValue()}'
                 flag = True
             else:  # otherwise, recurse into its children
-                result += f'"{item.getValue()}": {self.nodeTraversalToString(item.getChildren())}'
+                result += f'{item.getValue()}: {self.nodeTraversalToString(item.getChildren())}'
 
             # add separators for values
             if i < len(items) - 1:
@@ -148,16 +132,6 @@ class Trie:
     def getValueByKey(self, subkey):
         """
         Retrieves the value associated with a subkey (e.g., `key1.subkey`).
-
-        Parameters:
-        ----------
-        subkey : str
-            The full path of the key, including subkeys.
-
-        Returns:
-        -------
-        tuple:
-            A tuple containing a success flag and the retrieved value or error message.
         """
         current_node = self.root
 
@@ -167,10 +141,23 @@ class Trie:
         subkeys = subkey[1:]
 
         # traverse the top-level key
-        for char in top_level_key:
+        key_parts = list(top_level_key)  
+        key_parts = str(key_parts)
+        
+        # separate letters ('key') and number
+        letters = ''.join([char for char in key_parts if char.isalpha()])
+        number = ''.join([char for char in key_parts if char.isdigit()])
+
+        # traverse the Trie to find the key 
+        for char in letters:
             if (existing_item := current_node.elementExists(char)) == -1:
                 return "Not Found!"
             current_node = existing_item.getChildren()
+
+        # check number key{number}
+        if (existing_item := current_node.elementExists(number)) == -1:
+            return "Not Found!"
+        current_node = existing_item.getChildren()
 
         # traverse the subkeys
         for subkey in subkeys:
@@ -206,26 +193,29 @@ class Trie:
     def delete(self, top_level_key):
         """
         Deletes a top-level key and its associated subtree from the Trie.
-
-        Parameters:
-        ----------
-        top_level_key : str
-            The key to delete.
-
-        Returns:
-        -------
-        tuple:
-            A tuple containing a success flag and a message.
         """
         current_node = self.root
 
         # traverse to the key
-        for char in top_level_key:
+        key_parts = list(top_level_key)  
+        key_parts = str(key_parts)
+        
+        # separate letters ('key') and number
+        letters = ''.join([char for char in key_parts if char.isalpha()])
+        number = ''.join([char for char in key_parts if char.isdigit()])
+
+        # traverse the Trie to find the key 
+        for char in letters:
             if (existing_item := current_node.elementExists(char)) == -1:
                 return "Not Found!"
-            previous_node = current_node
             current_node = existing_item.getChildren()
 
+        # check number key{number}
+        if (existing_item := current_node.elementExists(number)) == -1:
+            return "Not Found!"
+        previous_node = current_node
+        current_node = existing_item.getChildren()
+        
         # recursively delete the key's subtree
         self.recursive_delete(current_node)
         previous_node.removeItem(existing_item.getValue())
@@ -234,11 +224,7 @@ class Trie:
     def recursive_delete(self, current_node):
         """
         Recursively deletes all items in a subtree.
-
-        Parameters:
-        ----------
-        current_node : Node
-            The root of the subtree to delete.
+        current_node : The root of the subtree to delete.
         """
         for item in current_node.getItems():
             self.recursive_delete(item.getChildren())

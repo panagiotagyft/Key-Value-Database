@@ -18,7 +18,10 @@ class KVServerManager:
         try:
             # create a socket using IPv4 addressing and TCP protocol
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sck:
+                
+                # Keep the connection alive.
                 sck.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  
+                
                 # bind the socket to the specified IP address and port
                 sck.bind((self.ip_address, self.port))
                     
@@ -26,9 +29,11 @@ class KVServerManager:
                 sck.listen()
                 print(f"Server is listening on {self.ip_address}:{self.port}")
                 print(f"Server is up and running. Waiting for incoming connections...")
+                
                 connection, address = sck.accept()
 
-                self.socket = sck 
+                self.socket = sck  # for closing the socket when the user types EXIT.
+                
                 while True:
     
                     try:
@@ -43,15 +48,18 @@ class KVServerManager:
                         print(f"Received request: {request}")
                             
                         response = self.processBrokerRequest(request)
+                        print(response)
                         connection.sendall(response.encode('utf-8'))
                         
                     except socket.error as e:
                         print(f"Error! Failed to communicate with  {address}: {e}")
                         if connection: connection.close()
+                        sys.exit(1)
                         
                     except Exception as e:
                         print(f"Unexpected error: {e}")
                         if connection: connection.close()
+                        sys.exit(0)
                                     
         except KeyboardInterrupt:
             print("\nShutting down server...")

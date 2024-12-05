@@ -11,7 +11,7 @@ def main():
     # 2. initialize the KVServerManager with the parsed configuration
     kvServerManager = KVServerManager(ip_address, port)
 
-    # 3. receive  data from the broker
+    # 3. receive data from the broker
     kvServerManager.receiveDataFromBroker()
 
 
